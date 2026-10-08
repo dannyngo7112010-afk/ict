@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhà Hàng Gia Đình - Cozy Cartoon Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phaser 3 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Comfortaa & Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cozy: ['Quicksand', 'Comfortaa', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: '#FFF8F0',
+                        warmBrown: '#6e472a',
+                        pastelOrange: '#FFB085',
+                        pastelYellow: '#FFD97D',
+                        pastelGreen: '#95DAC1',
+                        pastelPink: '#FFC6C7',
+                        softDark: '#3A3335',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #F7EBE1;
+            color: #3A3335;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .cartoon-box {
+            background-color: #FFF8F0;
+            border: 3px solid #523826;
+            box-shadow: 4px 4px 0px #523826;
+            border-radius: 1.25rem;
+        }
+
+        .cartoon-btn {
+            border: 3px solid #422a1b;
+            box-shadow: 3px 3px 0px #422a1b;
+            transition: all 0.1s ease-in-out;
+            font-weight: 700;
+        }
+
+        .cartoon-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #422a1b;
+        }
+
+        .cartoon-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #422a1b;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFEAD7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFB085;
+            border: 2px solid #523826;
+            border-radius: 10px;
+        }
+
+        .modal-backdrop {
+            background-color: rgba(68, 52, 40, 0.75);
+            backdrop-filter: blur(4px);
+        }
+
+        #konami-toast {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col md:flex-row bg-[#F7EBE1]">
+
+    <div id="ui-sidebar" class="w-full md:w-80 bg-[#FFF3E4] border-r-4 border-[#523826] flex flex-col h-auto md:h-full z-10 shadow-2xl">
+        <!-- Header & Stats Bar -->
+        <div class="p-4 bg-[#FFB085] border-b-4 border-[#523826] flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold text-[#422a1b] flex items-center gap-2">
+                    <span class="text-2xl">🐻</span> Tiệm Ăn Gấu Con
+                </h1>
+                <div class="flex items-center gap-2">
+                    <button id="btn-settings" class="px-2.5 py-1 bg-[#FFF8F0] text-[#523826] cartoon-btn rounded-full text-xs font-bold hover:bg-[#FFEAD7]">
+                        ⚙️ Cài đặt
+                    </button>
+                    <span id="day-badge" class="px-3 py-1 bg-[#FFF8F0] text-[#523826] cartoon-btn rounded-full text-xs font-bold">
+                        Ngày 1
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-1">
+                <div class="bg-[#FFF8F0] p-2 rounded-xl border-2 border-[#523826] flex items-center gap-2 shadow-sm">
+                    <span class="text-xl">🪙</span>
+                    <div>
+                        <div class="text-[10px] text-[#7A5B47] uppercase font-bold">Vốn Tiền Xu</div>
+                        <div id="stat-gold" class="text-base font-bold text-[#D97706]">300 xu</div>
+                    </div>
+                </div>
+                <div class="bg-[#FFF8F0] p-2 rounded-xl border-2 border-[#523826] flex items-center gap-2 shadow-sm">
+                    <span class="text-xl">🎯</span>
+                    <div>
+                        <div class="text-[10px] text-[#7A5B47] uppercase font-bold">Thu nhập ngày</div>
+                        <div id="stat-target" class="text-base font-bold text-[#059669]">0 / 50 xu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Control Panel Based on Game Phase -->
+        <div class="flex-1 p-4 overflow-y-auto flex flex-col gap-4" id="control-panel">
+            <!-- Rendered dynamically via JS -->
+        </div>
+
+        <!-- Quick Access Navigation Buttons -->
+        <div class="p-3 bg-[#FFE0C3] border-t-4 border-[#523826] grid grid-cols-3 gap-1.5">
+            <button id="btn-tutorial" class="px-2 py-2 bg-[#95DAC1] hover:bg-[#80ccb1] text-[#22483b] text-xs cartoon-btn rounded-xl flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-graduation-cap"></i> <span>Hướng Dẫn</span>
+            </button>
+            <button id="btn-recipe-book" class="px-2 py-2 bg-[#FFD97D] hover:bg-[#f0c865] text-[#543d03] text-xs cartoon-btn rounded-xl flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-book-open"></i> <span>Sổ Tay</span>
+            </button>
+            <button id="btn-open-shop" class="px-2 py-2 bg-[#FFC6C7] hover:bg-[#f0aeb0] text-[#5e2325] text-xs cartoon-btn rounded-xl flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-store"></i> <span>Nâng Cấp</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="game-container" class="flex-1 relative h-full w-full bg-[#E5D4C0] overflow-hidden flex items-center justify-center">
+        <!-- Floating Canvas Header overlay -->
+        <div class="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-10">
+            <div id="phase-title" class="bg-[#FFF8F0] border-3 border-[#523826] text-[#523826] px-4 py-2 rounded-2xl shadow-lg pointer-events-auto text-sm font-bold flex items-center gap-2">
+                <span>☀️</span> BUỔI SÁNG: ĐI CHỢ & CHUẨN BỊ
+            </div>
+            <div id="game-clock" class="hidden bg-[#FFF8F0] border-3 border-[#523826] text-[#523826] px-4 py-2 rounded-2xl shadow-lg pointer-events-auto text-sm font-bold flex items-center gap-2">
+                <span>⏰</span> <span id="clock-time">08:00 AM</span>
+            </div>
+        </div>
+
+        <!-- Secret Toast Notification Banner -->
+        <div id="konami-toast" class="absolute top-16 z-30 pointer-events-none opacity-0 scale-75 transform -translate-y-10">
+            <div class="bg-[#FFD97D] border-4 border-[#523826] text-[#523826] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold">
+                <span class="text-3xl">🐔</span>
+                <div>
+                    <div class="text-xs text-[#7A5B47] uppercase font-bold">PHÚC LÀNH BÍ MẬT</div>
+                    <div class="text-lg text-emerald-700 font-extrabold">Nhận được phúc lành của Thần Khô Gà :0 (+99,999 Xu)! 💰</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals Layer -->
+    <div id="modals-layer" class="relative z-50">
+        
+        <!-- Settings Modal -->
+        <div id="modal-settings" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 hidden">
+            <div class="cartoon-box max-w-sm w-full p-6 relative text-[#3A3335] bg-[#FFF8F0]">
+                <div class="flex justify-between items-center mb-4 border-b-2 border-[#523826]/20 pb-2">
+                    <h2 class="text-xl font-bold text-[#523826] flex items-center gap-2">
+                        ⚙️ Cài Đặt Âm Thanh
+                    </h2>
+                    <button class="btn-close-modal text-[#523826] hover:text-black font-bold text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="space-y-4 my-2">
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-[#523826] flex items-center gap-2">
+                                🎵 Nhạc Nền (BGM)
+                            </label>
+                            <span id="bgm-val-text" class="text-xs font-bold text-[#D97706]">50%</span>
+                        </div>
+                        <input type="range" id="slider-bgm" min="0" max="1" step="0.05" value="0.5" class="w-full accent-[#FFB085] cursor-pointer">
+                    </div>
+
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-[#523826] flex items-center gap-2">
+                                🔔 Hiệu Ứng (SFX)
+                            </label>
+                            <span id="sfx-val-text" class="text-xs font-bold text-[#D97706]">70%</span>
+                        </div>
+                        <input type="range" id="slider-sfx" min="0" max="1" step="0.05" value="0.7" class="w-full accent-[#FFB085] cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="mt-4 text-[11px] text-[#7A5B47] text-center italic border-t border-[#523826]/10 pt-2">
+                    💡 <b>Mẹo nhỏ:</b> Nhà hàng này có một bí mật truyền kiếp... Nghe đồn dòng họ này có nuôi một sinh vật mà chưa ai thấy bao giờ, một con Tra...? 🐔✨
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-tutorial" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 hidden">
+            <div class="cartoon-box max-w-lg w-full p-6 relative text-[#3A3335] max-h-[90vh] flex flex-col bg-[#FFF8F0]">
+                <div class="flex items-center gap-3 mb-4 border-b-2 border-[#523826]/20 pb-3">
+                    <span class="text-4xl">🐻</span>
+                    <div>
+                        <h2 class="text-xl font-bold text-[#523826]">Bác Bếp Trưởng Hướng Dẫn</h2>
+                        <p class="text-xs text-[#7A5B47]">Học nhanh 4 bước làm chủ tiệm ăn gia đình!</p>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30 flex gap-3 items-center">
+                        <span class="text-3xl bg-[#FFF8F0] p-2 rounded-xl border border-[#523826]">📖</span>
+                        <div>
+                            <b class="text-[#D97706] text-sm">Bước 1: Công Thức Tự Động Mở Mỗi Ngày</b>
+                            <p class="text-[#523826] mt-0.5">Mỗi ngày mới sẽ tự động học 1 công thức mới! Bạn cũng có thể tự sáng tạo thử nghiệm sớm.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30 flex gap-3 items-center">
+                        <span class="text-3xl bg-[#FFF8F0] p-2 rounded-xl border border-[#523826]">🛒</span>
+                        <div>
+                            <b class="text-[#D97706] text-sm">Bước 2: Đi Chợ Thoải Mái</b>
+                            <p class="text-[#523826] mt-0.5">Mua nguyên liệu cần thiết. Tiền mua chợ chưa tính vào mục tiêu thu nhập nên bạn cứ yên tâm mua sắm!</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30 flex gap-3 items-center">
+                        <span class="text-3xl bg-[#FFF8F0] p-2 rounded-xl border border-[#523826]">🍳</span>
+                        <div>
+                            <b class="text-[#D97706] text-sm">Bước 3: Nấu Theo Yêu Cầu Khách</b>
+                            <p class="text-[#523826] mt-0.5">Bỏ nguyên liệu vào chảo + Chọn kiểu nấu (Chiên/Luộc/Nướng). Phục vụ nhanh để nhận tiền boa!</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#FFEAD7] p-3 rounded-xl border-2 border-[#523826]/30 flex gap-3 items-center">
+                        <span class="text-3xl bg-[#FFF8F0] p-2 rounded-xl border border-[#523826]">💰</span>
+                        <div>
+                            <b class="text-[#D97706] text-sm">Bước 4: Đạt Thu Nhập Ngày</b>
+                            <p class="text-[#523826] mt-0.5">Mục tiêu Ngày 1: Đạt <b class="text-emerald-600 font-bold">50 xu tổng thu nhập</b> (Doanh thu + Boa) để qua màn!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-close-tutorial" class="w-full mt-4 py-3 bg-[#FFB085] hover:bg-[#f29f72] text-[#422a1b] font-bold cartoon-btn rounded-xl shadow-lg text-sm">
+                    Đã Rõ! Bắt Đầu Ngay 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- Recipe Book Modal -->
+        <div id="modal-recipes" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 hidden">
+            <div class="cartoon-box max-w-3xl w-full p-6 relative text-[#3A3335] max-h-[90vh] flex flex-col bg-[#FFF3E4]">
+                <div class="flex justify-between items-center mb-4 border-b-2 border-[#523826]/20 pb-2">
+                    <h2 class="text-xl font-bold text-[#523826] flex items-center gap-2">
+                        📖 Sổ Tay Nấu Ăn Gia Truyền
+                    </h2>
+                    <button class="btn-close-modal text-[#523826] hover:text-black font-bold text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="recipes-list" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 pr-1">
+                    <!-- Dynamic Recipe Cards -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop & Upgrade Modal -->
+        <div id="modal-shop" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 hidden">
+            <div class="cartoon-box max-w-2xl w-full p-6 relative text-[#3A3335] max-h-[90vh] flex flex-col bg-[#FFF3E4]">
+                <div class="flex justify-between items-center mb-4 border-b-2 border-[#523826]/20 pb-2">
+                    <h2 class="text-xl font-bold text-[#523826] flex items-center gap-2">
+                        🏪 Nâng Cấp Tiệm Ăn & Bếp
+                    </h2>
+                    <button class="btn-close-modal text-[#523826] hover:text-black font-bold text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="shop-list" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                    <!-- Dynamic Shop Items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Report Modal -->
+        <div id="modal-summary" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 hidden">
+            <div class="cartoon-box max-w-md w-full p-6 relative text-[#3A3335] bg-[#FFF8F0]">
+                <div class="text-center mb-3">
+                    <span class="text-4xl">📋</span>
+                    <h2 id="summary-title" class="text-2xl font-bold text-[#523826]">Báo Cáo Cuối Ngày</h2>
+                    <p id="summary-subtitle" class="text-xs text-[#7A5B47]">Kết quả kinh doanh hôm nay</p>
+                </div>
+
+                <div class="space-y-2 bg-[#FFEAD7] p-4 rounded-xl border-2 border-[#523826]/30 text-xs mb-4">
+                    <div class="flex justify-between text-[#523826]">
+                        <span>Doanh thu món bán:</span>
+                        <span id="sum-revenue" class="text-emerald-600 font-bold">+0 xu</span>
+                    </div>
+                    <div class="flex justify-between text-[#523826]">
+                        <span>Tiền boa từ khách:</span>
+                        <span id="sum-tips" class="text-emerald-600 font-bold">+0 xu</span>
+                    </div>
+                    <div class="flex justify-between border-t border-[#523826]/20 pt-1 font-bold text-[#059669]">
+                        <span>TỔNG THU NHẬP NGÀY:</span>
+                        <span id="sum-gross" class="text-base">+0 xu</span>
+                    </div>
+                    <div class="flex justify-between text-[#523826] border-t border-[#523826]/20 pt-1">
+                        <span>Giá vốn nguyên liệu dùng:</span>
+                        <span id="sum-cogs" class="text-rose-600 font-bold">-0 xu</span>
+                    </div>
+                    <div class="flex justify-between text-[#523826]">
+                        <span>Chi phí vận hành tiệm:</span>
+                        <span id="sum-opex" class="text-rose-600 font-bold">-30 xu</span>
+                    </div>
+                    <div class="border-t-2 border-[#523826]/30 pt-2 mt-2 flex justify-between font-bold text-sm">
+                        <span class="text-[#523826]">Mục tiêu thu nhập ngày:</span>
+                        <span id="sum-target-val" class="text-[#D97706] text-base">50 xu</span>
+                    </div>
+                </div>
+
+                <div id="summary-status" class="p-3 rounded-xl text-center text-xs font-bold mb-4 border-2">
+                    <!-- Status message -->
+                </div>
+
+                <button id="btn-summary-action" class="w-full py-3 bg-[#FFB085] hover:bg-[#f0a073] text-[#422a1b] font-bold cartoon-btn rounded-xl text-sm">
+                    Tiếp Tục
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    const AudioEngine = {
+        ctx: null,
+        bgmGain: null,
+        sfxGain: null,
+        bgmVolume: parseFloat(localStorage.getItem('restaurant_bgm_vol') ?? 0.5),
+        sfxVolume: parseFloat(localStorage.getItem('restaurant_sfx_vol') ?? 0.7),
+        bgmTimer: null,
+        isBgmPlaying: false,
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+
+                this.bgmGain = this.ctx.createGain();
+                this.bgmGain.gain.value = this.bgmVolume;
+                this.bgmGain.connect(this.ctx.destination);
+
+                this.sfxGain = this.ctx.createGain();
+                this.sfxGain.gain.value = this.sfxVolume;
+                this.sfxGain.connect(this.ctx.destination);
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+
+        setBgmVolume(val) {
+            this.bgmVolume = val;
+            localStorage.setItem('restaurant_bgm_vol', val);
+            if (this.bgmGain) this.bgmGain.gain.value = val;
+            if (val > 0 && !this.isBgmPlaying) this.startBGM();
+        },
+
+        setSfxVolume(val) {
+            this.sfxVolume = val;
+            localStorage.setItem('restaurant_sfx_vol', val);
+            if (this.sfxGain) this.sfxGain.gain.value = val;
+        },
+
+        playCoin() {
+            this.init(); if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+            osc.frequency.setValueAtTime(1200, this.ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+            osc.connect(gain); gain.connect(this.sfxGain);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.25);
+        },
+
+        playCookSound() {
+            this.init(); if (!this.ctx) return;
+            const bufferSize = this.ctx.sampleRate * 0.3;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass'; filter.frequency.value = 1000;
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            noise.connect(filter); filter.connect(gain); gain.connect(this.sfxGain);
+            noise.start();
+        },
+
+        playBell() {
+            this.init(); if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(987.77, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+            osc.connect(gain); gain.connect(this.sfxGain);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+        },
+
+        playFanfare() {
+            this.init(); if (!this.ctx) return;
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.08 + 0.3);
+                osc.connect(gain); gain.connect(this.sfxGain);
+                osc.start(this.ctx.currentTime + idx * 0.08);
+                osc.stop(this.ctx.currentTime + idx * 0.08 + 0.3);
+            });
+        },
+
+        startBGM() {
+            this.init();
+            if (this.isBgmPlaying) return;
+            this.isBgmPlaying = true;
+
+            const melodyNotes = [
+                261.63, 329.63, 392.00, 329.63,
+                293.66, 349.23, 440.00, 349.23,
+                329.63, 392.00, 523.25, 392.00,
+                349.23, 440.00, 392.00, 293.66
+            ];
+            let noteIdx = 0;
+
+            const playNextNote = () => {
+                if (!this.isBgmPlaying) return;
+                if (this.bgmVolume > 0 && this.ctx) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(melodyNotes[noteIdx], this.ctx.currentTime);
+                    
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+
+                    osc.connect(gain);
+                    gain.connect(this.bgmGain);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.45);
+                }
+
+                noteIdx = (noteIdx + 1) % melodyNotes.length;
+                this.bgmTimer = setTimeout(playNextNote, 500);
+            };
+
+            playNextNote();
+        }
+    };
+
+    const GAME_DATA = {
+        ingredients: [
+            { id: 'rice', name: 'Cơm', cost: 5, icon: '🍚' },
+            { id: 'egg', name: 'Trứng', cost: 4, icon: '🥚' },
+            { id: 'scullion', name: 'Hành', cost: 2, icon: '🧅' },
+            { id: 'shrimp', name: 'Tôm tươi', cost: 12, icon: '🦐' },
+            { id: 'fish', name: 'Cá tươi', cost: 10, icon: '🐟' },
+            { id: 'veggie', name: 'Rau xanh', cost: 3, icon: '🥬' },
+            { id: 'water', name: 'Nước lọc', cost: 1, icon: '💧' },
+            { id: 'meat', name: 'Thịt heo', cost: 10, icon: '🥩' },
+            { id: 'spice', name: 'Gia vị', cost: 3, icon: '🧂' },
+            { id: 'garlic', name: 'Tỏi', cost: 2, icon: '🧄' },
+            { id: 'squid', name: 'Mực tươi', cost: 14, icon: '🦑' },
+            { id: 'chili', name: 'Ớt tươi', cost: 2, icon: '🌶️' }
+        ],
+        methods: [
+            { id: 'fried', name: 'Chiên / Xào', icon: '🍳' },
+            { id: 'boiled', name: 'Luộc / Canh', icon: '🍲' },
+            { id: 'grilled', name: 'Nướng BBQ', icon: '🔥' }
+        ],
+        recipes: [
+            {
+                id: 'egg_fried_rice',
+                name: 'Cơm Chiên Trứng',
+                price: 25,
+                method: 'fried',
+                reqs: { rice: 1, egg: 1, scullion: 1 },
+                unlockDay: 1,
+                discovered: true,
+                icon: '🍛',
+                desc: 'Món ăn gia truyền thơm phức, hạt cơm vàng ươm.'
+            },
+            {
+                id: 'fish_soup',
+                name: 'Canh Cá Thanh Đạm',
+                price: 35,
+                method: 'boiled',
+                reqs: { fish: 1, veggie: 1, water: 1 },
+                unlockDay: 2,
+                discovered: false,
+                icon: '🍲',
+                desc: 'Nước canh ngọt thanh thanh dịu nhẹ.'
+            },
+            {
+                id: 'shrimp_fried_rice',
+                name: 'Cơm Chiên Tôm',
+                price: 40,
+                method: 'fried',
+                reqs: { rice: 1, egg: 1, shrimp: 1 },
+                unlockDay: 3,
+                discovered: false,
+                icon: '🍤',
+                desc: 'Cơm chiên giòn rụm kết hợp tôm ngọt lịm.'
+            },
+            {
+                id: 'stir_fry_meat',
+                name: 'Rau Xào Thịt',
+                price: 32,
+                method: 'fried',
+                reqs: { meat: 1, veggie: 1, garlic: 1 },
+                unlockDay: 4,
+                discovered: false,
+                icon: '🥗',
+                desc: 'Thịt đậm đà xào cùng rau củ giòn ngọt.'
+            },
+            {
+                id: 'grilled_squid',
+                name: 'Mực Nướng Sa Tế',
+                price: 48,
+                method: 'grilled',
+                reqs: { squid: 1, chili: 1, spice: 1 },
+                unlockDay: 5,
+                discovered: false,
+                icon: '🦑',
+                desc: 'Mực nướng thơm nức mũi cay nồng đậm đà.'
+            }
+        ],
+        customerTypes: [
+            { type: 'easy', name: 'Thỏ Con Dễ Tính', patience: 32, tipMult: 1.0, color: 0xFFAAA5, icon: '🐰' },
+            { type: 'gourmet', name: 'Mèo Sành Ăn', patience: 24, tipMult: 1.8, color: 0xFFD3B6, icon: '🐱' },
+            { type: 'hasty', name: 'Cáo Vội Vàng', patience: 16, tipMult: 1.2, color: 0xDCEDC8, icon: '🦊' }
+        ],
+        upgrades: [
+            { id: 'stove', name: 'Bếp Ga Hồng Ngoại', cost: 120, bought: false, desc: 'Tăng tốc độ nấu nhanh hơn 30%', icon: '🔥' },
+            { id: 'fridge', name: 'Tủ Lạnh Giữ Tươi', cost: 100, bought: false, desc: 'Bảo quản nguyên liệu qua đêm không hỏng', icon: '❄️' },
+            { id: 'tables', name: 'Bàn Ăn Gỗ Sồi', cost: 150, bought: false, desc: 'Mở rộng thêm Bàn #3 đón thêm khách', icon: '🪑' },
+            { id: 'decor', name: 'Đèn Lồng Ấm Cúm', cost: 90, bought: false, desc: 'Khách vui vẻ kiên nhẫn hơn +25%', icon: '🏮' }
+        ]
+    };
+
+    let state = {
+        day: 1,
+        gold: 300,
+        targetProfit: 50,
+        inventory: { rice: 3, egg: 3, scullion: 3 },
+        menu: ['egg_fried_rice'],
+        knownRecipes: [...GAME_DATA.recipes],
+        upgrades: [...GAME_DATA.upgrades],
+        phase: 'MORNING',
+        
+        startDayGold: 300,
+        revenueDay: 0,
+        tipsDay: 0,
+        cogsDay: 0,
+        wasteDay: 0,
+        opexDay: 30,
+
+        panSlots: [],
+        selectedMethod: 'fried',
+        tables: [
+            { id: 1, occupied: false, customer: null, x: 220, y: 340 },
+            { id: 2, occupied: false, customer: null, x: 440, y: 340 }
+        ]
+    };
+
+    // Auto unlock recipes based on current day
+    function checkRecipeAutoUnlocks() {
+        state.knownRecipes.forEach(r => {
+            if (r.unlockDay <= state.day && !r.discovered) {
+                r.discovered = true;
+                if (!state.menu.includes(r.id)) {
+                    state.menu.push(r.id);
+                }
+            }
+        });
+    }
+
+    class CartoonRestaurantScene extends Phaser.Scene {
+        constructor() {
+            super({ key: 'CartoonRestaurantScene' });
+        }
+
+        create() {
+            this.cameras.main.setBackgroundColor('#E5D4C0');
+            this.add.rectangle(400, 310, 760, 540, 0xFFEAD7).setStrokeStyle(6, 0x523826);
+            this.add.rectangle(400, 100, 720, 110, 0xFFB085).setStrokeStyle(4, 0x523826);
+            this.add.text(400, 58, '👩‍🍳 KHU VỰC BẾP NẤU 👨‍🍳', { fontSize: '15px', color: '#523826', fontStyle: 'bold' }).setOrigin(0.5);
+
+            this.stoveGfx = this.add.rectangle(400, 118, 160, 55, 0xFFF8F0).setStrokeStyle(3, 0x523826);
+            this.stoveText = this.add.text(400, 118, '🍳 Bếp Sẵn Sàng', { fontSize: '13px', color: '#D97706', fontStyle: 'bold' }).setOrigin(0.5);
+
+            this.tableGfxGroup = this.add.group();
+            this.renderTablesGraphics();
+        }
+
+        renderTablesGraphics() {
+            this.tableGfxGroup.clear(true, true);
+            state.tables.forEach(t => {
+                const bg = this.add.rectangle(t.x, t.y, 140, 120, 0xD0A984).setStrokeStyle(4, 0x523826);
+                const cloth = this.add.rectangle(t.x, t.y, 120, 100, 0xFFF8F0).setStrokeStyle(2, 0x523826);
+                const txt = this.add.text(t.x, t.y - 40, `Bàn #${t.id}`, { fontSize: '12px', color: '#523826', fontStyle: 'bold' }).setOrigin(0.5);
+                
+                this.tableGfxGroup.add(bg);
+                this.tableGfxGroup.add(cloth);
+                this.tableGfxGroup.add(txt);
+            });
+        }
+
+        spawnCustomerGraphic(table, customer) {
+            const cGroup = this.add.container(table.x, table.y + 10);
+
+            const custCircle = this.add.circle(0, 0, 26, customer.data.color).setStrokeStyle(3, 0x523826);
+            const emoji = this.add.text(0, -2, customer.data.icon, { fontSize: '24px' }).setOrigin(0.5);
+
+            const bubble = this.add.rectangle(0, -48, 120, 32, 0xFFF8F0).setStrokeStyle(3, 0x523826);
+            const orderTxt = this.add.text(0, -48, customer.orderName, { fontSize: '11px', color: '#523826', fontStyle: 'bold' }).setOrigin(0.5);
+
+            const pBarBg = this.add.rectangle(0, 30, 64, 8, 0xFFEAD7).setStrokeStyle(2, 0x523826);
+            const pBar = this.add.rectangle(-32, 30, 64, 8, 0x059669).setOrigin(0, 0.5);
+
+            cGroup.add([custCircle, emoji, bubble, orderTxt, pBarBg, pBar]);
+            customer.gfxContainer = cGroup;
+            customer.pBar = pBar;
+        }
+
+        removeCustomerGraphic(customer) {
+            if (customer && customer.gfxContainer) {
+                customer.gfxContainer.destroy();
+            }
+        }
+
+        showFloatingText(x, y, text, color = '#059669') {
+            const txt = this.add.text(x, y, text, { 
+                fontSize: '15px', 
+                color: color, 
+                fontStyle: 'bold', 
+                stroke: '#FFF8F0', 
+                strokeThickness: 4 
+            });
+            this.tweens.add({
+                targets: txt,
+                y: y - 45,
+                alpha: 0,
+                duration: 1300,
+                onComplete: () => txt.destroy()
+            });
+        }
+
+        update(time, delta) {
+            if (state.phase === 'SERVICE') {
+                state.tables.forEach(table => {
+                    if (table.occupied && table.customer) {
+                        const cust = table.customer;
+                        cust.currentPatience -= (delta / 1000);
+
+                        if (cust.pBar) {
+                            const ratio = Math.max(0, cust.currentPatience / cust.maxPatience);
+                            cust.pBar.width = 64 * ratio;
+                            if (ratio < 0.3) cust.pBar.fillColor = 0xE11D48;
+                        }
+
+                        if (cust.currentPatience <= 0) {
+                            this.showFloatingText(table.x, table.y, 'Tức giận bỏ về! 😡', '#E11D48');
+                            this.removeCustomerGraphic(cust);
+                            table.occupied = false;
+                            table.customer = null;
+                            updateSidebarUI();
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    const phaserConfig = {
+        type: Phaser.AUTO,
+        parent: 'game-container',
+        width: 800,
+        height: 600,
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+        scene: [CartoonRestaurantScene]
+    };
+
+    let gameScene = null;
+    const game = new Phaser.Game(phaserConfig);
+    game.events.on('ready', () => {
+        gameScene = game.scene.getScene('CartoonRestaurantScene');
+    });
+
+    function updateSidebarUI() {
+        checkRecipeAutoUnlocks();
+
+        // Calculate Target Forgivingly: Day 1=50, Day 2=75, Day 3=100...
+        state.targetProfit = 50 + (state.day - 1) * 25;
+
+        const panel = document.getElementById('control-panel');
+        document.getElementById('stat-gold').innerText = `${state.gold.toLocaleString()} xu`;
+        
+        const currentGross = state.revenueDay + state.tipsDay;
+        document.getElementById('stat-target').innerText = `${currentGross} / ${state.targetProfit} xu`;
+        document.getElementById('day-badge').innerText = `Ngày ${state.day}`;
+
+        // Preserve Market Scroll Position Fix
+        const marketContainer = document.getElementById('market-ingredients-list');
+        const savedScrollTop = marketContainer ? marketContainer.scrollTop : 0;
+
+        if (state.phase === 'MORNING') {
+            document.getElementById('phase-title').innerHTML = `<span>☀️</span> BUỔI SÁNG: ĐI CHỢ & CHUẨN BỊ`;
+            document.getElementById('game-clock').classList.add('hidden');
+            renderMorningPanel(panel);
+        } else if (state.phase === 'SERVICE') {
+            document.getElementById('phase-title').innerHTML = `<span>🍳</span> ĐANG MỞ CỬA PHỤC VỤ`;
+            document.getElementById('game-clock').classList.remove('hidden');
+            renderServicePanel(panel);
+        }
+
+        // Restore Scroll Position after UI refresh
+        const newMarketContainer = document.getElementById('market-ingredients-list');
+        if (newMarketContainer) {
+            newMarketContainer.scrollTop = savedScrollTop;
+        }
+    }
+
+    function renderMorningPanel(panel) {
+        let html = `
+            <div class="space-y-3">
+                <div class="cartoon-box p-3">
+                    <h3 class="text-xs font-bold text-[#523826] uppercase mb-2 flex items-center justify-between">
+                        <span>🛒 Chợ Nguyên Liệu</span>
+                        <span class="text-[10px] text-[#7A5B47]">Hạn: Trong ngày</span>
+                    </h3>
+                    <div id="market-ingredients-list" class="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+        `;
+
+        GAME_DATA.ingredients.forEach(ing => {
+            const owned = state.inventory[ing.id] || 0;
+            html += `
+                <div class="bg-[#FFEAD7] p-2 rounded-xl border-2 border-[#523826]/30 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold">${ing.icon} ${ing.name}</span>
+                        <span class="text-xs font-bold text-[#D97706]">${ing.cost}x</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 pt-1 border-t border-[#523826]/20">
+                        <span class="text-[10px] text-[#7A5B47]">Có: <b>${owned}</b></span>
+                        <button onclick="buyIngredient('${ing.id}')" class="px-2 py-0.5 bg-[#FFB085] hover:bg-[#f0a073] text-[#422a1b] text-[11px] cartoon-btn rounded-lg">
+                            + Mua
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                    </div>
+                </div>
+
+                <!-- Daily Menu Builder -->
+                <div class="cartoon-box p-3">
+                    <h3 class="text-xs font-bold text-[#523826] uppercase mb-2">
+                        📋 Chọn Thực Đơn Bán Hôm Nay
+                    </h3>
+                    <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+        `;
+
+        state.knownRecipes.filter(r => r.discovered).forEach(rec => {
+            const isSelected = state.menu.includes(rec.id);
+            html += `
+                <label class="flex items-center justify-between p-2 rounded-xl bg-[#FFEAD7] border-2 ${isSelected ? 'border-[#059669]' : 'border-[#523826]/30'} cursor-pointer">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleMenuItem('${rec.id}')" class="rounded accent-[#059669]">
+                        <span class="text-xs font-bold text-[#523826]">${rec.icon} ${rec.name}</span>
+                    </div>
+                    <span class="text-xs font-bold text-[#059669]">${rec.price} xu</span>
+                </label>
+            `;
+        });
+
+        html += `
+                    </div>
+                </div>
+
+                <button onclick="startServicePhase()" class="w-full py-3 bg-[#95DAC1] hover:bg-[#80ccb1] text-[#1b4334] cartoon-btn rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md">
+                    🚪 Mở Cửa Đón Khách
+                </button>
+            </div>
+        `;
+
+        panel.innerHTML = html;
+    }
+
+    function buyIngredient(id) {
+        const item = GAME_DATA.ingredients.find(i => i.id === id);
+        if (state.gold >= item.cost) {
+            state.gold -= item.cost;
+            state.inventory[id] = (state.inventory[id] || 0) + 1;
+            AudioEngine.playCoin();
+            updateSidebarUI();
+        }
+    }
+
+    function toggleMenuItem(id) {
+        if (state.menu.includes(id)) {
+            if (state.menu.length > 1) state.menu = state.menu.filter(m => m !== id);
+        } else {
+            state.menu.push(id);
+        }
+        updateSidebarUI();
+    }
+
+    function renderServicePanel(panel) {
+        let html = `
+            <div class="space-y-3">
+                <div class="cartoon-box p-3">
+                    <h3 class="text-xs font-bold text-[#523826] uppercase mb-2 flex items-center justify-between">
+                        <span>🍳 Bếp Nấu Chảo</span>
+                        <button onclick="clearPan()" class="text-[10px] text-rose-600 font-bold hover:underline">Xóa chảo</button>
+                    </h3>
+
+                    <div class="bg-[#FFEAD7] p-2 rounded-xl border-2 border-[#523826]/30 min-h-[46px] flex flex-wrap gap-1 items-center mb-2">
+        `;
+
+        if (state.panSlots.length === 0) {
+            html += `<span class="text-xs text-[#7A5B47] italic">Thêm nguyên liệu vào chảo...</span>`;
+        } else {
+            state.panSlots.forEach((slot, idx) => {
+                const ing = GAME_DATA.ingredients.find(i => i.id === slot.id);
+                html += `
+                    <span class="px-2 py-0.5 bg-[#FFF8F0] text-[#523826] rounded-lg border border-[#523826] text-xs font-bold flex items-center gap-1">
+                        ${ing.icon} ${ing.name}
+                        <button onclick="removeFromPan(${idx})" class="text-rose-600 ml-1">×</button>
+                    </span>
+                `;
+            });
+        }
+
+        html += `
+                    </div>
+
+                    <div class="text-[11px] font-bold text-[#7A5B47] mb-1">Cách chế biến:</div>
+                    <div class="grid grid-cols-3 gap-1 mb-2">
+        `;
+
+        GAME_DATA.methods.forEach(m => {
+            const active = state.selectedMethod === m.id;
+            html += `
+                <button onclick="setMethod('${m.id}')" class="py-1 px-1 text-[11px] cartoon-btn rounded-lg ${active ? 'bg-[#FFD97D] text-[#523826]' : 'bg-[#FFF8F0] text-[#7A5B47]'}">
+                    ${m.icon} ${m.name}
+                </button>
+            `;
+        });
+
+        html += `
+                    </div>
+
+                    <div class="text-[11px] font-bold text-[#7A5B47] mb-1">Kho nguyên liệu sẵn có:</div>
+                    <div class="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto pr-1">
+        `;
+
+        Object.keys(state.inventory).forEach(id => {
+            const count = state.inventory[id];
+            if (count > 0) {
+                const ing = GAME_DATA.ingredients.find(i => i.id === id);
+                html += `
+                    <button onclick="addToPan('${id}')" class="p-1 bg-[#FFF8F0] hover:bg-[#FFEAD7] rounded-lg border border-[#523826]/40 flex items-center justify-between text-xs font-bold text-[#523826]">
+                        <span>${ing.icon} ${ing.name}</span>
+                        <span class="px-1.5 py-0.2 bg-[#FFB085] text-[#422a1b] rounded text-[10px]">${count}</span>
+                    </button>
+                `;
+            }
+        });
+
+        html += `
+                    </div>
+
+                    <button onclick="cookPanDish()" class="w-full mt-3 py-2.5 bg-[#FFB085] hover:bg-[#f0a073] text-[#422a1b] cartoon-btn rounded-xl text-xs flex items-center justify-center gap-1">
+                        🔥 Bắt Đầu Nấu Món!
+                    </button>
+                </div>
+
+                <div class="cartoon-box p-3">
+                    <h3 class="text-xs font-bold text-[#523826] uppercase mb-1">
+                        👥 Đang Đợi Gọi Món (${state.tables.filter(t => t.occupied).length}/${state.tables.length})
+                    </h3>
+                    <div class="space-y-1.5">
+        `;
+
+        state.tables.forEach(t => {
+            if (t.occupied && t.customer) {
+                const c = t.customer;
+                html += `
+                    <div class="p-2 bg-[#FFEAD7] rounded-xl border border-[#523826]/30 flex items-center justify-between text-xs">
+                        <div>
+                            <span class="font-bold text-[#D97706]">Bàn ${t.id}:</span>
+                            <span class="text-[#523826] ml-1 font-bold">${c.orderName}</span>
+                        </div>
+                        <span class="text-[10px] text-[#7A5B47] font-bold">${c.data.name}</span>
+                    </div>
+                `;
+            }
+        });
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+
+        panel.innerHTML = html;
+    }
+
+    function addToPan(id) {
+        if (state.inventory[id] > 0) {
+            state.inventory[id]--;
+            state.panSlots.push({ id });
+            updateSidebarUI();
+        }
+    }
+
+    function removeFromPan(idx) {
+        const removed = state.panSlots.splice(idx, 1)[0];
+        if (removed) {
+            state.inventory[removed.id] = (state.inventory[removed.id] || 0) + 1;
+            updateSidebarUI();
+        }
+    }
+
+    function clearPan() {
+        state.panSlots.forEach(s => {
+            state.inventory[s.id] = (state.inventory[s.id] || 0) + 1;
+        });
+        state.panSlots = [];
+        updateSidebarUI();
+    }
+
+    function setMethod(methodId) {
+        state.selectedMethod = methodId;
+        updateSidebarUI();
+    }
+
+    function cookPanDish() {
+        if (state.panSlots.length === 0) return;
+
+        AudioEngine.playCookSound();
+
+        let cogs = 0;
+        const usedCounts = {};
+        state.panSlots.forEach(s => {
+            const ing = GAME_DATA.ingredients.find(i => i.id === s.id);
+            cogs += ing.cost;
+            usedCounts[s.id] = (usedCounts[s.id] || 0) + 1;
+        });
+        state.cogsDay += cogs;
+
+        let matchedRecipe = null;
+        GAME_DATA.recipes.forEach(rec => {
+            if (rec.method === state.selectedMethod) {
+                const reqKeys = Object.keys(rec.reqs);
+                const panKeys = Object.keys(usedCounts);
+                if (reqKeys.length === panKeys.length && reqKeys.every(k => rec.reqs[k] === usedCounts[k])) {
+                    matchedRecipe = rec;
+                }
+            }
+        });
+
+        state.panSlots = [];
+
+        let finalDish = {
+            name: 'Món Thử Nghiệm',
+            price: 12,
+            quality: 'low',
+            comment: 'Món ăn lạ vị...'
+        };
+
+        if (matchedRecipe) {
+            finalDish = {
+                id: matchedRecipe.id,
+                name: matchedRecipe.name,
+                price: matchedRecipe.price,
+                quality: 'high',
+                comment: 'Tuyệt ngon chuẩn vị!'
+            };
+
+            const stateRec = state.knownRecipes.find(r => r.id === matchedRecipe.id);
+            if (stateRec && !stateRec.discovered) {
+                stateRec.discovered = true;
+                if (!state.menu.includes(stateRec.id)) state.menu.push(stateRec.id);
+                if (gameScene) gameScene.showFloatingText(400, 150, `✨ SÁNG TẠO SỚM: ${matchedRecipe.name}!`, '#D97706');
+            }
+        }
+
+        serveToCustomer(finalDish);
+        updateSidebarUI();
+    }
+
+    function serveToCustomer(dish) {
+        let targetTable = state.tables.find(t => t.occupied && (t.customer.orderId === dish.id || t.customer.orderId === 'SURPRISE'));
+
+        if (!targetTable) {
+            targetTable = state.tables.find(t => t.occupied);
+        }
+
+        if (targetTable) {
+            const cust = targetTable.customer;
+            AudioEngine.playBell();
+
+            let earned = dish.price;
+            let tip = Math.round(earned * 0.2 * cust.data.tipMult);
+
+            if (dish.quality === 'low') {
+                earned = Math.round(earned * 0.5);
+                tip = 0;
+            }
+
+            state.gold += (earned + tip);
+            state.revenueDay += earned;
+            state.tipsDay += tip;
+
+            if (gameScene) {
+                gameScene.showFloatingText(targetTable.x, targetTable.y, `+${earned + tip} xu! (${dish.comment})`, '#059669');
+                gameScene.removeCustomerGraphic(cust);
+            }
+
+            targetTable.occupied = false;
+            targetTable.customer = null;
+        } else {
+            state.wasteDay += dish.price;
+            if (gameScene) gameScene.showFloatingText(400, 150, `Bỏ món phí phạm! (-${dish.price}xu)`, '#E11D48');
+        }
+    }
+
+    let clockInterval = null;
+    let customerSpawnInterval = null;
+    let currentHour = 8;
+
+    function startServicePhase() {
+        if (state.menu.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 món vào thực đơn ngày!');
+            return;
+        }
+
+        state.phase = 'SERVICE';
+        currentHour = 8;
+        updateSidebarUI();
+
+        clockInterval = setInterval(() => {
+            currentHour++;
+            const displayTime = currentHour < 12 ? `${currentHour}:00 AM` : `${currentHour === 12 ? 12 : currentHour - 12}:00 PM`;
+            document.getElementById('clock-time').innerText = displayTime;
+
+            if (currentHour >= 17) {
+                endServicePhase();
+            }
+        }, 3000);
+
+        customerSpawnInterval = setInterval(() => {
+            spawnCustomer();
+        }, 4000);
+    }
+
+    function spawnCustomer() {
+        const freeTable = state.tables.find(t => !t.occupied);
+        if (!freeTable) return;
+
+        const custType = GAME_DATA.customerTypes[Math.floor(Math.random() * GAME_DATA.customerTypes.length)];
+        let chosenDishId = state.menu[Math.floor(Math.random() * state.menu.length)];
+        let chosenDishName = GAME_DATA.recipes.find(r => r.id === chosenDishId)?.name || 'Cơm Chiên Trứng';
+
+        if (Math.random() < 0.2) {
+            chosenDishId = 'SURPRISE';
+            chosenDishName = '🎁 Món Bất Ngờ';
+        }
+
+        const customer = {
+            data: custType,
+            orderId: chosenDishId,
+            orderName: chosenDishName,
+            maxPatience: custType.patience,
+            currentPatience: custType.patience
+        };
+
+        freeTable.occupied = true;
+        freeTable.customer = customer;
+
+        if (gameScene) {
+            gameScene.spawnCustomerGraphic(freeTable, customer);
+        }
+
+        updateSidebarUI();
+    }
+
+    function endServicePhase() {
+        clearInterval(clockInterval);
+        clearInterval(customerSpawnInterval);
+
+        const hasFridge = state.upgrades.find(u => u.id === 'fridge')?.bought;
+        if (!hasFridge) {
+            Object.keys(state.inventory).forEach(id => {
+                const count = state.inventory[id];
+                if (count > 0) {
+                    const ing = GAME_DATA.ingredients.find(i => i.id === id);
+                    state.wasteDay += (count * ing.cost);
+                }
+            });
+            state.inventory = {};
+        }
+
+        state.phase = 'SUMMARY';
+        showSummaryModal();
+    }
+
+    function showSummaryModal() {
+        const grossIncome = state.revenueDay + state.tipsDay;
+
+        document.getElementById('sum-revenue').innerText = `+${state.revenueDay} xu`;
+        document.getElementById('sum-tips').innerText = `+${state.tipsDay} xu`;
+        document.getElementById('sum-gross').innerText = `+${grossIncome} xu`;
+        document.getElementById('sum-cogs').innerText = `-${state.cogsDay} xu`;
+        document.getElementById('sum-opex').innerText = `-${state.opexDay} xu`;
+        document.getElementById('sum-target-val').innerText = `${state.targetProfit} xu`;
+
+        const statusDiv = document.getElementById('summary-status');
+        const actionBtn = document.getElementById('btn-summary-action');
+
+        if (grossIncome >= state.targetProfit) {
+            statusDiv.className = "p-3 rounded-xl text-center text-xs font-bold mb-4 bg-emerald-500/20 text-emerald-700 border-2 border-emerald-600";
+            statusDiv.innerText = `🎉 XUẤT SẮC! ĐẠT CHỈ TIÊU THU NHẬP (${grossIncome}/${state.targetProfit} XU)`;
+            actionBtn.innerText = "Sang Ngày Tiếp Theo 🚀";
+            actionBtn.onclick = () => advanceNextDay();
+        } else {
+            statusDiv.className = "p-3 rounded-xl text-center text-xs font-bold mb-4 bg-rose-500/20 text-rose-700 border-2 border-rose-600";
+            statusDiv.innerText = `❌ CHƯA ĐẠT CHỈ TIÊU (${grossIncome}/${state.targetProfit} XU). CHƠI LẠI NGÀY NÀY!`;
+            actionBtn.innerText = "Thử Lại Ngày Này 🔄";
+            actionBtn.onclick = () => retryDay();
+        }
+
+        document.getElementById('modal-summary').classList.remove('hidden');
+    }
+
+    function advanceNextDay() {
+        document.getElementById('modal-summary').classList.add('hidden');
+        state.day++;
+        state.startDayGold = state.gold;
+        resetDayStats();
+        state.phase = 'MORNING';
+        updateSidebarUI();
+    }
+
+    function retryDay() {
+        document.getElementById('modal-summary').classList.add('hidden');
+        state.gold = state.startDayGold;
+        resetDayStats();
+        state.phase = 'MORNING';
+        updateSidebarUI();
+    }
+
+    function resetDayStats() {
+        state.revenueDay = 0;
+        state.tipsDay = 0;
+        state.cogsDay = 0;
+        state.wasteDay = 0;
+        state.tables.forEach(t => {
+            if (t.customer && gameScene) gameScene.removeCustomerGraphic(t.customer);
+            t.occupied = false;
+            t.customer = null;
+        });
+    }
+
+    function renderRecipeBook() {
+        const list = document.getElementById('recipes-list');
+        let html = '';
+
+        state.knownRecipes.forEach(r => {
+            const methodObj = GAME_DATA.methods.find(m => m.id === r.method);
+            let ingredientsText = '';
+            let rawCostSum = 0;
+            Object.keys(r.reqs).forEach(ingId => {
+                const ing = GAME_DATA.ingredients.find(i => i.id === ingId);
+                const qty = r.reqs[ingId];
+                rawCostSum += (ing.cost * qty);
+                ingredientsText += `<span class="px-2 py-0.5 bg-[#FFF8F0] border border-[#523826]/30 rounded-lg text-[11px] font-bold text-[#523826]">${ing.icon} ${ing.name} x${qty}</span> `;
+            });
+
+            const profit = r.price - rawCostSum;
+
+            html += `
+                <div class="bg-[#FFEAD7] p-4 rounded-2xl border-3 border-[#523826] flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between border-b-2 border-[#523826]/20 pb-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl">${r.discovered ? r.icon : '❓'}</span>
+                                <div>
+                                    <h4 class="font-bold text-sm text-[#523826]">${r.discovered ? r.name : '??? (Món Chưa Mở)'}</h4>
+                                    <span class="text-[10px] font-bold text-[#D97706] bg-[#FFF8F0] px-2 py-0.5 rounded-full border border-[#523826]/20">
+                                        ${methodObj.icon} ${methodObj.name}
+                                    </span>
+                                </div>
+                            </div>
+                            ${r.discovered ? `<span class="text-xs font-bold text-[#059669] bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-400">Giá: ${r.price}xu</span>` : ''}
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="text-[11px] font-bold text-[#7A5B47] mb-1">CÔNG THỨC & NGUYÊN LIỆU:</div>
+                            <div class="flex flex-wrap gap-1">
+                                ${r.discovered ? ingredientsText : `<span class="text-xs text-[#7A5B47] italic">Tự động mở khóa vào <b>Ngày ${r.unlockDay}</b> (Hoặc tự sáng tạo thử nghiệm ngay hôm nay!)</span>`}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${r.discovered ? `
+                        <div class="mt-3 pt-2 border-t border-[#523826]/20 flex justify-between text-[11px] font-bold text-[#7A5B47]">
+                            <span>Chi phí vốn: ${rawCostSum}xu</span>
+                            <span class="text-[#059669]">Lợi nhuận: +${profit}xu</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        list.innerHTML = html;
+    }
+
+    function renderShop() {
+        const list = document.getElementById('shop-list');
+        let html = '';
+        state.upgrades.forEach(u => {
+            html += `
+                <div class="p-3 bg-[#FFEAD7] rounded-2xl border-2 border-[#523826] flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">${u.icon}</span>
+                        <div>
+                            <h4 class="font-bold text-sm text-[#523826]">${u.name}</h4>
+                            <p class="text-xs text-[#7A5B47]">${u.desc}</p>
+                        </div>
+                    </div>
+                    ${u.bought ? `
+                        <span class="px-3 py-1 bg-gray-200 text-gray-600 text-xs font-bold rounded-xl border border-gray-400">Đã Có</span>
+                    ` : `
+                        <button onclick="buyUpgrade('${u.id}')" class="px-3 py-1.5 bg-[#FFD97D] hover:bg-[#f0c865] text-[#523826] cartoon-btn rounded-xl text-xs font-bold">
+                            ${u.cost} xu
+                        </button>
+                    `}
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+
+    function buyUpgrade(id) {
+        const up = state.upgrades.find(u => u.id === id);
+        if (up && !up.bought && state.gold >= up.cost) {
+            state.gold -= up.cost;
+            up.bought = true;
+
+            if (id === 'tables' && state.tables.length < 3) {
+                state.tables.push({ id: 3, occupied: false, customer: null, x: 640, y: 340 });
+                if (gameScene) gameScene.renderTablesGraphics();
+            }
+
+            AudioEngine.playCoin();
+            renderShop();
+            updateSidebarUI();
+        }
+    }
+
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let konamiIndex = 0;
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key;
+        const requiredKey = konamiCode[konamiIndex];
+
+        if (key.toLowerCase() === requiredKey.toLowerCase()) {
+            konamiIndex++;
+            if (konamiIndex === konamiCode.length) {
+                activateKonamiCheat();
+                konamiIndex = 0;
+            }
+        } else {
+            konamiIndex = 0;
+        }
+    });
+
+    function activateKonamiCheat() {
+        state.gold += 99999;
+        AudioEngine.playFanfare();
+        updateSidebarUI();
+
+        const toast = document.getElementById('konami-toast');
+        toast.classList.remove('opacity-0', 'scale-75', '-translate-y-10');
+        toast.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+
+        if (gameScene) {
+            gameScene.showFloatingText(400, 200, '🐔 PHÚC LÀNH THẦN KHÔ GÀ! 🐔', '#D97706');
+        }
+
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'scale-75', '-translate-y-10');
+        }, 3500);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.addEventListener('click', () => {
+            AudioEngine.init();
+            AudioEngine.startBGM();
+        }, { once: true });
+
+        const bgmSlider = document.getElementById('slider-bgm');
+        const sfxSlider = document.getElementById('slider-sfx');
+
+        bgmSlider.value = AudioEngine.bgmVolume;
+        sfxSlider.value = AudioEngine.sfxVolume;
+        document.getElementById('bgm-val-text').innerText = `${Math.round(AudioEngine.bgmVolume * 100)}%`;
+        document.getElementById('sfx-val-text').innerText = `${Math.round(AudioEngine.sfxVolume * 100)}%`;
+
+        bgmSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            AudioEngine.setBgmVolume(val);
+            document.getElementById('bgm-val-text').innerText = `${Math.round(val * 100)}%`;
+        });
+
+        sfxSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            AudioEngine.setSfxVolume(val);
+            document.getElementById('sfx-val-text').innerText = `${Math.round(val * 100)}%`;
+        });
+
+        document.getElementById('btn-settings').addEventListener('click', () => {
+            document.getElementById('modal-settings').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-recipe-book').addEventListener('click', () => {
+            renderRecipeBook();
+            document.getElementById('modal-recipes').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-open-shop').addEventListener('click', () => {
+            renderShop();
+            document.getElementById('modal-shop').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-tutorial').addEventListener('click', () => {
+            document.getElementById('modal-tutorial').classList.remove('hidden');
+        });
+
+        document.querySelectorAll('.btn-close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('modal-recipes').classList.add('hidden');
+                document.getElementById('modal-shop').classList.add('hidden');
+                document.getElementById('modal-settings').classList.add('hidden');
+            });
+        });
+
+        document.getElementById('btn-close-tutorial').addEventListener('click', () => {
+            document.getElementById('modal-tutorial').classList.add('hidden');
+        });
+
+        document.getElementById('modal-tutorial').classList.remove('hidden');
+
+        updateSidebarUI();
+    });
+    </script>
+</body>
+</html>
